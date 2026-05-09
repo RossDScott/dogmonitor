@@ -25,7 +25,7 @@ export function CarMode({ config, onSettings }: Props) {
   const wakeLockHeld = useWakeLock(true);
   const { videoRef, ready: cameraReady, captureJpeg } = useCamera();
   const { dbLevel, streamRef: audioStreamRef } = useAudio(true);
-  const { record: recordAudio } = useAudioRecorder(audioStreamRef);
+  const { record: recordAudio, mimeType: audioMimeType, ext: audioExt } = useAudioRecorder(audioStreamRef);
   const { magnitude } = useMotion(true);
   const { location } = useGps(true);
 
@@ -43,6 +43,8 @@ export function CarMode({ config, onSettings }: Props) {
 
   const noiseStartRef = useRef<number | null>(null);
   const motionFiredRef = useRef<number>(0);
+  const recordingRef = useRef(false);
+  const [recordingStatus, setRecordingStatus] = useState<'idle' | 'recording' | 'done' | 'failed'>('idle');
 
   useEffect(() => {
     uploadQueue.setSasUri(config.sasUri);
@@ -104,15 +106,27 @@ export function CarMode({ config, onSettings }: Props) {
         noiseStartRef.current = null;
         const eventId = addEvent('noise', dbLevel);
         captureAndEnqueue('noise').then(() => uploadStatus());
-        recordAudio(10_000).then((audioBlob) => {
-          const audioPath = timestampedPath('audio/trigger-noise', 'webm');
-          uploadQueue.enqueue(audioPath, audioBlob, 'audio/webm');
-          audioHistoryRef.current = [...audioHistoryRef.current.slice(-19), audioPath];
-          eventsRef.current = eventsRef.current.map((e) =>
-            e.id === eventId ? { ...e, audioClip: audioPath } : e,
-          );
-          uploadStatus();
-        }).catch((err) => console.error('Audio recording failed:', err));
+        if (!recordingRef.current) {
+          recordingRef.current = true;
+          setRecordingStatus('recording');
+          recordAudio(10_000).then((audioBlob) => {
+            const audioPath = timestampedPath('audio/trigger-noise', audioExt);
+            uploadQueue.enqueue(audioPath, audioBlob, audioMimeType || 'audio/webm');
+            audioHistoryRef.current = [...audioHistoryRef.current.slice(-19), audioPath];
+            eventsRef.current = eventsRef.current.map((e) =>
+              e.id === eventId ? { ...e, audioClip: audioPath } : e,
+            );
+            uploadStatus();
+            setRecordingStatus('done');
+            setTimeout(() => setRecordingStatus('idle'), 3000);
+          }).catch((err) => {
+            console.error('Audio recording failed:', err);
+            setRecordingStatus('failed');
+            setTimeout(() => setRecordingStatus('idle'), 5000);
+          }).finally(() => {
+            recordingRef.current = false;
+          });
+        }
       }
     } else {
       noiseStartRef.current = null;
@@ -145,6 +159,13 @@ export function CarMode({ config, onSettings }: Props) {
       />
       <CameraView videoRef={videoRef} lastCapture={lastCaptureUrl} />
       <AudioBar dbLevel={dbLevel} threshold={config.noiseThresholdDb} />
+      {recordingStatus !== 'idle' && (
+        <div className={`recording-status recording-status--${recordingStatus}`}>
+          {recordingStatus === 'recording' && 'Recording audio...'}
+          {recordingStatus === 'done' && 'Audio clip saved'}
+          {recordingStatus === 'failed' && 'Audio recording failed'}
+        </div>
+      )}
       <div className="sensor-row">
         <span>Motion: {magnitude.toFixed(2)} m/s²</span>
         {location && (
