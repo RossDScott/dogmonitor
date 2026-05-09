@@ -24,8 +24,8 @@ const ONE_HOUR = 60 * 60 * 1000;
 export function CarMode({ config, onSettings }: Props) {
   const wakeLockHeld = useWakeLock(true);
   const { videoRef, ready: cameraReady, captureJpeg } = useCamera();
-  const { dbLevel } = useAudio(true);
-  const { record: recordAudio } = useAudioRecorder(true);
+  const { dbLevel, streamRef: audioStreamRef } = useAudio(true);
+  const { record: recordAudio } = useAudioRecorder(audioStreamRef);
   const { magnitude } = useMotion(true);
   const { location } = useGps(true);
 
@@ -112,7 +112,7 @@ export function CarMode({ config, onSettings }: Props) {
             e.id === eventId ? { ...e, audioClip: audioPath } : e,
           );
           uploadStatus();
-        }).catch(() => {});
+        }).catch((err) => console.error('Audio recording failed:', err));
       }
     } else {
       noiseStartRef.current = null;

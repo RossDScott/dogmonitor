@@ -46,5 +46,5 @@ export function useAudio(active: boolean) {
     };
   }, [active]);
 
-  return { dbLevel, error };
+  return { dbLevel, error, streamRef };
 }

@@ -1,27 +1,6 @@
-import { useEffect, useRef } from 'react';
+import type { RefObject } from 'react';
 
-export function useAudioRecorder(active: boolean) {
-  const streamRef = useRef<MediaStream | null>(null);
-
-  useEffect(() => {
-    if (!active) return;
-    let cancelled = false;
-
-    navigator.mediaDevices
-      .getUserMedia({ audio: true, video: false })
-      .then((stream) => {
-        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
-        streamRef.current = stream;
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    };
-  }, [active]);
-
+export function useAudioRecorder(streamRef: RefObject<MediaStream | null>) {
   function record(durationMs: number): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const stream = streamRef.current;
