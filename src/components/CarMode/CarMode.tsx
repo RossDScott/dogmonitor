@@ -3,6 +3,7 @@ import type { AppConfig, MonitorEvent } from '../../types/status';
 import { useWakeLock } from '../../hooks/useWakeLock';
 import { useCamera } from '../../hooks/useCamera';
 import { useAudio } from '../../hooks/useAudio';
+import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { useMotion } from '../../hooks/useMotion';
 import { useGps } from '../../hooks/useGps';
 import type { QueueStatus } from '../../services/uploadQueue';
@@ -24,6 +25,7 @@ export function CarMode({ config, onSettings }: Props) {
   const wakeLockHeld = useWakeLock(true);
   const { videoRef, ready: cameraReady, captureJpeg } = useCamera();
   const { dbLevel } = useAudio(true);
+  const { record: recordAudio } = useAudioRecorder(true);
   const { magnitude } = useMotion(true);
   const { location } = useGps(true);
 
@@ -46,17 +48,13 @@ export function CarMode({ config, onSettings }: Props) {
     return uploadQueue.onStatus(setQueueStatus);
   }, [config.sasUri]);
 
-  function addEvent(type: MonitorEvent['type'], level: number) {
+  function addEvent(type: MonitorEvent['type'], level: number): string {
+    const id = crypto.randomUUID();
     eventsRef.current = [
       ...eventsRef.current.filter((e) => Date.now() - new Date(e.time).getTime() < ONE_HOUR),
-      {
-        id: crypto.randomUUID(),
-        type,
-        time: nowIso(),
-        level,
-        acknowledged: false,
-      },
+      { id, type, time: nowIso(), level, acknowledged: false },
     ];
+    return id;
   }
 
   async function captureAndEnqueue(triggerType?: string) {
@@ -102,8 +100,16 @@ export function CarMode({ config, onSettings }: Props) {
       if (noiseStartRef.current === null) noiseStartRef.current = Date.now();
       else if (Date.now() - noiseStartRef.current > 2000) {
         noiseStartRef.current = null;
-        addEvent('noise', dbLevel);
+        const eventId = addEvent('noise', dbLevel);
         captureAndEnqueue('noise').then(() => uploadStatus());
+        recordAudio(10_000).then((audioBlob) => {
+          const audioPath = timestampedPath('audio/trigger-noise', 'webm');
+          uploadQueue.enqueue(audioPath, audioBlob, 'audio/webm');
+          eventsRef.current = eventsRef.current.map((e) =>
+            e.id === eventId ? { ...e, audioClip: audioPath } : e,
+          );
+          uploadStatus();
+        }).catch(() => {});
       }
     } else {
       noiseStartRef.current = null;

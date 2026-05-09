@@ -6,6 +6,7 @@ export interface MonitorEvent {
   time: string;
   level: number;
   acknowledged: boolean;
+  audioClip?: string;
 }
 
 export interface GpsLocation {

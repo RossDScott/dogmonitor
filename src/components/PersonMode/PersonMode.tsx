@@ -66,7 +66,7 @@ export function PersonMode({ config, onSettings }: Props) {
         photoHistory={status?.photoHistory ?? []}
       />
 
-      <EventLog events={allEvents} />
+      <EventLog events={allEvents} sasUri={config.sasUri} />
     </div>
   );
 }

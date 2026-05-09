@@ -1,7 +1,9 @@
 import type { MonitorEvent } from '../../types/status';
+import { photoBlobUrl } from '../../services/azureBlob';
 
 interface Props {
   events: MonitorEvent[];
+  sasUri: string;
 }
 
 const LABELS: Record<MonitorEvent['type'], string> = {
@@ -9,7 +11,7 @@ const LABELS: Record<MonitorEvent['type'], string> = {
   motion: 'Movement',
 };
 
-export function EventLog({ events }: Props) {
+export function EventLog({ events, sasUri }: Props) {
   if (events.length === 0) return <p className="no-events">No events in the last hour</p>;
 
   return (
@@ -21,6 +23,13 @@ export function EventLog({ events }: Props) {
             <span className="event-type">{LABELS[e.type]}</span>
             <span className="event-level">{e.level.toFixed(1)}</span>
             <span className="event-time">{new Date(e.time).toLocaleTimeString()}</span>
+            {e.audioClip && (
+              <audio
+                controls
+                src={photoBlobUrl(sasUri, e.audioClip)}
+                className="event-audio"
+              />
+            )}
           </li>
         ))}
       </ul>
