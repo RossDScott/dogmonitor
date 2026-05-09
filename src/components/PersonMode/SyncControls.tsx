@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 interface Props {
   lastPollTime: string | null;
   isPending: boolean;
@@ -8,6 +10,8 @@ interface Props {
 }
 
 export function SyncControls({ lastPollTime, isPending, error, onRefresh, lastUpdate, location }: Props) {
+  const [showMap, setShowMap] = useState(false);
+
   return (
     <div className="sync-controls">
       <div className="sync-row">
@@ -28,14 +32,19 @@ export function SyncControls({ lastPollTime, isPending, error, onRefresh, lastUp
         </div>
       )}
       {location && (
-        <a
-          href={`https://maps.google.com/?q=${location.lat},${location.lng}`}
-          target="_blank"
-          rel="noreferrer"
-          className="gps-link"
-        >
-          View car location
-        </a>
+        <>
+          <button className="gps-link" onClick={() => setShowMap(v => !v)}>
+            {showMap ? 'Hide map' : 'View car location'}
+          </button>
+          {showMap && (
+            <iframe
+              className="map-embed"
+              src={`https://www.openstreetmap.org/export/embed.html?bbox=${location.lng - 0.005},${location.lat - 0.005},${location.lng + 0.005},${location.lat + 0.005}&layer=mapnik&marker=${location.lat},${location.lng}`}
+              title="Car location"
+              loading="lazy"
+            />
+          )}
+        </>
       )}
       {error && <div className="sync-error">{error}</div>}
     </div>
