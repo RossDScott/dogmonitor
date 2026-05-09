@@ -22,6 +22,7 @@ export interface StatusJson {
   location: GpsLocation | null;
   latestPhoto: string | null;
   photoHistory: string[];
+  audioHistory: string[];
   events: MonitorEvent[];
 }
 

@@ -4,6 +4,7 @@ import { getJson } from '../../services/azureBlob';
 import { usePoll } from '../../hooks/usePoll';
 import { AlertBanner } from './AlertBanner';
 import { PhotoViewer } from './PhotoViewer';
+import { AudioStrip } from './AudioStrip';
 import { EventLog } from './EventLog';
 import { SyncControls } from './SyncControls';
 
@@ -45,7 +46,7 @@ export function PersonMode({ config, onSettings }: Props) {
   return (
     <div className="person-mode">
       <div className="mode-header">
-        <h2>Person Mode</h2>
+        <h2>Person Mode <span className="app-version">v{__APP_VERSION__}</span></h2>
         <button className="btn-icon" onClick={onSettings}>Settings</button>
       </div>
 
@@ -65,6 +66,8 @@ export function PersonMode({ config, onSettings }: Props) {
         latestPhoto={status?.latestPhoto ?? null}
         photoHistory={status?.photoHistory ?? []}
       />
+
+      <AudioStrip sasUri={config.sasUri} audioHistory={status?.audioHistory ?? []} />
 
       <EventLog events={allEvents} sasUri={config.sasUri} />
     </div>

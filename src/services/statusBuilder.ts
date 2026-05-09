@@ -8,10 +8,12 @@ export function buildStatus(
   location: GpsLocation | null,
   latestPhoto: string | null,
   photoHistory: string[],
+  audioHistory: string[],
   events: MonitorEvent[],
 ): StatusJson {
   const recentEvents = events.filter((e) => !isOlderThan(e.time, ONE_HOUR));
   const recentPhotos = photoHistory.slice(-60);
+  const recentAudio = audioHistory.slice(-20);
 
   return {
     schemaVersion: 1,
@@ -20,6 +22,7 @@ export function buildStatus(
     location,
     latestPhoto,
     photoHistory: recentPhotos,
+    audioHistory: recentAudio,
     events: recentEvents,
   };
 }

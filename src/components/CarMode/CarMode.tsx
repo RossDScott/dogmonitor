@@ -32,6 +32,7 @@ export function CarMode({ config, onSettings }: Props) {
   const sessionStart = useRef(nowIso());
   const eventsRef = useRef<MonitorEvent[]>([]);
   const photoHistoryRef = useRef<string[]>([]);
+  const audioHistoryRef = useRef<string[]>([]);
   const latestPhotoRef = useRef<string | null>(null);
   const [lastCaptureUrl, setLastCaptureUrl] = useState<string | null>(null);
   const [queueStatus, setQueueStatus] = useState<QueueStatus>({
@@ -77,6 +78,7 @@ export function CarMode({ config, onSettings }: Props) {
       location,
       latestPhotoRef.current,
       photoHistoryRef.current,
+      audioHistoryRef.current,
       eventsRef.current,
     );
     uploadQueue.enqueue('status.json', JSON.stringify(status), 'application/json');
@@ -105,6 +107,7 @@ export function CarMode({ config, onSettings }: Props) {
         recordAudio(10_000).then((audioBlob) => {
           const audioPath = timestampedPath('audio/trigger-noise', 'webm');
           uploadQueue.enqueue(audioPath, audioBlob, 'audio/webm');
+          audioHistoryRef.current = [...audioHistoryRef.current.slice(-19), audioPath];
           eventsRef.current = eventsRef.current.map((e) =>
             e.id === eventId ? { ...e, audioClip: audioPath } : e,
           );
@@ -131,7 +134,7 @@ export function CarMode({ config, onSettings }: Props) {
   return (
     <div className="car-mode">
       <div className="mode-header">
-        <h2>Car Mode</h2>
+        <h2>Car Mode <span className="app-version">v{__APP_VERSION__}</span></h2>
         <button className="btn-icon" onClick={onSettings}>Settings</button>
       </div>
       <StatusBar
