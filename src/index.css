@@ -140,6 +140,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
 /* ── Car mode ── */
 .car-mode { display: flex; flex-direction: column; flex: 1; }
+.car-mode-blackout { position: fixed; inset: 0; background: #000; z-index: 9999; cursor: pointer; }
 
 .camera-view {
   position: relative;

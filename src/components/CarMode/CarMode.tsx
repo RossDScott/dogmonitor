@@ -45,6 +45,7 @@ export function CarMode({ config, onSettings }: Props) {
   const motionFiredRef = useRef<number>(0);
   const recordingRef = useRef(false);
   const [recordingStatus, setRecordingStatus] = useState<'idle' | 'recording' | 'done' | 'failed'>('idle');
+  const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
     uploadQueue.setSasUri(config.sasUri);
@@ -145,10 +146,15 @@ export function CarMode({ config, onSettings }: Props) {
     }
   }, [magnitude]);
 
+  if (hidden) {
+    return <div className="car-mode-blackout" onClick={() => setHidden(false)} />;
+  }
+
   return (
     <div className="car-mode">
       <div className="mode-header">
         <h2>Car Mode <span className="app-version">v{__APP_VERSION__}</span></h2>
+        <button className="btn-icon" onClick={() => setHidden(true)}>Hide</button>
         <button className="btn-icon" onClick={onSettings}>Settings</button>
       </div>
       <StatusBar
