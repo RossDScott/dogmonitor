@@ -18,6 +18,9 @@ export function PersonMode({ config, onSettings }: Props) {
   const [localEvents, setLocalEvents] = useState<MonitorEvent[]>([]);
   const seenEventIds = useRef(new Set<string>());
 
+  const followUpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollNowRef = useRef<() => void>(() => {});
+
   const fetchStatus = useCallback(async () => {
     const s = await getJson<StatusJson>(config.sasUri, 'status.json');
     setStatus(s);
@@ -29,10 +32,16 @@ export function PersonMode({ config, onSettings }: Props) {
         ...prev,
         ...newEvents.map((e) => ({ ...e, acknowledged: false })),
       ]);
+      if (followUpTimerRef.current !== null) clearTimeout(followUpTimerRef.current);
+      followUpTimerRef.current = setTimeout(() => {
+        followUpTimerRef.current = null;
+        pollNowRef.current();
+      }, 15_000);
     }
   }, [config.sasUri]);
 
   const { lastPollTime, isPending, error, pollNow } = usePoll(fetchStatus, config.syncIntervalSec);
+  pollNowRef.current = pollNow;
 
   function dismissAlerts() {
     setLocalEvents((prev) => prev.map((e) => ({ ...e, acknowledged: true })));

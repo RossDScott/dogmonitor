@@ -24,7 +24,7 @@ export function AudioStrip({ sasUri, audioHistory }: Props) {
         {[...audioHistory].reverse().map((path) => (
           <li key={path} className="audio-item">
             <span className="audio-label">{clipLabel(path)}</span>
-            <audio controls src={photoBlobUrl(sasUri, path)} />
+            <audio controls preload="auto" src={photoBlobUrl(sasUri, path)} />
           </li>
         ))}
       </ul>
